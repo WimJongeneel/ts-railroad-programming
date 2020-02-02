@@ -1,33 +1,21 @@
-interface fun<a, b> {
-  (a:a): b
+import { Result, fail, unit, map, then } from "./railroad"
+
+type User = { firstname: string, lastname: string }
+
+const getUser = (): Result<User, 'no-user'> => fail('no-user')
+
+const formatName = (u: User): Result<string, 'no-name'> => {
+  if (u.firstname && u.lastname) return unit(`${u.firstname} ${u.lastname}`)
+  return fail('no-name')
+}
+const renderUser = (): Result<string, 'no-user'| 'no-name'> => {
+  const user = getUser()
+  if (user.kind == 'failure') return user
+  return formatName(user.value)
 }
 
-interface Succes<a> {
-  kind: 'succes'
-  value: a
-}
+const renderUser1 = () => then<User, string, 'no-name'|'no-user'>(formatName)(getUser())
 
-interface Failure<e> {
-  kind: 'failure'
-  error: e
-}
+const greet = (name: string) => `hello ${name}`
 
-type Result<a, e> = Succes<a> | Failure<e>
-
-const unit = <a>(a:a): Succes<a> => ({kind: 'succes', value: a})
-const fail = <e>(e:e): Failure<e> => ({kind: 'failure', error: e})
-
-const x: Result<string, Error> = unit("asd")
-
-const map = <a,b, e>(f: fun<a, b>): fun<Result<a,e>, Result<b,e>> => r => 
-  r.kind == 'succes' ? unit(f(r.value)) : fail(r.error)
-
-const join = <a, e>(r:Result<Result<a, e>, e>): Result<a, e> => 
-  r.kind == 'failure' ? r : r.value
-
-const bind = <a, b, e>(f:fun<a, Result<b, e>>) => (r:Result<a, e>) => 
-  join(map(f)(r))
-
-
-
-  
+const greetUser = () =>  map(greet)(renderUser())
